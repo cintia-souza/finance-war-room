@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "War Room Finance",
-  description: "Controle de guerra financeira",
+  title: "Destrava",
+  description: "Destravar sua vida financeira",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "WarRoom",
+    title: "Destrava",
   },
   icons: {
     icon: "/icon.svg",

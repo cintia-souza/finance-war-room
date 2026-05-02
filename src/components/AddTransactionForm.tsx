@@ -109,82 +109,116 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
     }
   };
 
+  const inputClass =
+    "w-full rounded-2xl border border-t-border bg-t-surface p-4 text-t-text outline-none focus:ring-2 focus:ring-t-accent";
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-t-3xl border-t border-slate-800 bg-slate-900 p-6"
+      className="border-t-border bg-t-surface max-h-[85vh] space-y-4 overflow-y-auto rounded-t-3xl border-t p-6"
+      aria-label="Formulário de novo lançamento"
     >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white">Novo Lançamento</h3>
-        <div className="h-1 w-12 rounded-full bg-slate-700" />
+        <h3 className="text-lg font-bold">Novo Lançamento</h3>
+        <div className="bg-t-border h-1 w-12 rounded-full" aria-hidden="true" />
       </div>
 
-      {/* Toggle Receita/Despesa */}
-      <div className="flex gap-2 rounded-2xl bg-slate-800 p-1">
-        <button
-          type="button"
-          onClick={() => handleTypeChange("despesa")}
-          className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
-            type === "despesa" ? "bg-rose-600 text-white" : "text-slate-400"
-          }`}
-        >
-          Despesa
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTypeChange("receita")}
-          className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
-            type === "receita" ? "bg-emerald-600 text-white" : "text-slate-400"
-          }`}
-        >
-          Receita
-        </button>
-      </div>
+      <fieldset>
+        <legend className="sr-only">Tipo de lançamento</legend>
+        <div className="bg-t-bg flex gap-2 rounded-2xl p-1" role="radiogroup">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={type === "despesa"}
+            onClick={() => handleTypeChange("despesa")}
+            className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
+              type === "despesa" ? "bg-t-expense text-white" : "text-t-muted"
+            }`}
+          >
+            Despesa
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={type === "receita"}
+            onClick={() => handleTypeChange("receita")}
+            className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
+              type === "receita" ? "bg-t-income text-white" : "text-t-muted"
+            }`}
+          >
+            Receita
+          </button>
+        </div>
+      </fieldset>
 
-      <input
-        type="text"
-        placeholder="Descrição"
-        className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-white outline-none focus:ring-2 focus:ring-blue-600"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        required
-      />
-
-      <div className="flex gap-3">
+      <div>
+        <label htmlFor="add-description" className="sr-only">
+          Descrição
+        </label>
         <input
-          type="number"
-          step="0.01"
-          placeholder={hasInstallments ? "Valor da parcela" : "Valor"}
-          className="flex-1 rounded-2xl border border-slate-700 bg-slate-800 p-4 font-mono text-white outline-none focus:ring-2 focus:ring-blue-600"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          id="add-description"
+          type="text"
+          placeholder="Descrição"
+          className={inputClass}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           required
         />
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as TransactionCategory)}
-          className="max-w-[140px] rounded-2xl border border-slate-700 bg-slate-800 p-4 text-sm text-white outline-none"
-        >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {CATEGORY_LABELS[cat]}
-            </option>
-          ))}
-        </select>
       </div>
 
-      <input
-        type="date"
-        value={dueDate}
-        className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-white outline-none focus:ring-2 focus:ring-blue-600"
-        onChange={(e) => setDueDate(e.target.value)}
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="add-amount" className="sr-only">
+            Valor
+          </label>
+          <input
+            id="add-amount"
+            type="number"
+            step="0.01"
+            placeholder={hasInstallments ? "Valor parcela" : "Valor"}
+            className={`${inputClass} font-mono`}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="add-category" className="sr-only">
+            Categoria
+          </label>
+          <select
+            id="add-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as TransactionCategory)}
+            className={`${inputClass} text-sm`}
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {CATEGORY_LABELS[cat]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-      {/* Opções extras para despesa */}
+      <div>
+        <label htmlFor="add-date" className="sr-only">
+          Data de vencimento
+        </label>
+        <input
+          id="add-date"
+          type="date"
+          value={dueDate}
+          className={inputClass}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+      </div>
+
       {type === "despesa" && (
-        <div className="space-y-3">
+        <fieldset className="space-y-3">
+          <legend className="sr-only">Opções da despesa</legend>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-slate-400">
+            <label className="text-t-muted flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={isRecurring}
@@ -192,11 +226,11 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
                   setIsRecurring(e.target.checked);
                   if (e.target.checked) setHasInstallments(false);
                 }}
-                className="accent-blue-600"
+                className="accent-t-accent"
               />
-              Conta fixa mensal
+              Conta fixa
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-400">
+            <label className="text-t-muted flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={hasInstallments}
@@ -204,51 +238,67 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
                   setHasInstallments(e.target.checked);
                   if (e.target.checked) setIsRecurring(false);
                 }}
-                className="accent-blue-600"
+                className="accent-t-accent"
               />
               Parcelado
             </label>
           </div>
 
           {hasInstallments && (
-            <div className="flex gap-3">
-              <input
-                type="number"
-                placeholder="Nº parcelas"
-                min="2"
-                className="flex-1 rounded-2xl border border-slate-700 bg-slate-800 p-4 font-mono text-white outline-none focus:ring-2 focus:ring-blue-600"
-                value={totalInstallments}
-                onChange={(e) => setTotalInstallments(e.target.value)}
-                required
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Valor total da dívida"
-                className="flex-1 rounded-2xl border border-slate-700 bg-slate-800 p-4 font-mono text-white outline-none focus:ring-2 focus:ring-blue-600"
-                value={totalDebt}
-                onChange={(e) => setTotalDebt(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="add-installments" className="sr-only">
+                  Número de parcelas
+                </label>
+                <input
+                  id="add-installments"
+                  type="number"
+                  placeholder="Nº parcelas"
+                  min="2"
+                  className={`${inputClass} font-mono`}
+                  value={totalInstallments}
+                  onChange={(e) => setTotalInstallments(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="add-total-debt" className="sr-only">
+                  Valor total da dívida
+                </label>
+                <input
+                  id="add-total-debt"
+                  type="number"
+                  step="0.01"
+                  placeholder="Total dívida"
+                  className={`${inputClass} font-mono`}
+                  value={totalDebt}
+                  onChange={(e) => setTotalDebt(e.target.value)}
+                />
+              </div>
             </div>
           )}
-        </div>
+        </fieldset>
       )}
 
-      <textarea
-        placeholder="Observações (opcional)"
-        rows={2}
-        className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-600"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
+      <div>
+        <label htmlFor="add-notes" className="sr-only">
+          Observações
+        </label>
+        <textarea
+          id="add-notes"
+          placeholder="Observações (opcional)"
+          rows={2}
+          className={`${inputClass} text-sm`}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+      </div>
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`w-full rounded-2xl p-4 font-bold text-white transition-all active:scale-95 disabled:bg-slate-700 ${
-          type === "receita"
-            ? "bg-emerald-600 hover:bg-emerald-500"
-            : "bg-blue-600 hover:bg-blue-500"
+        className={`w-full rounded-2xl p-4 font-bold text-white transition-all active:scale-95 disabled:opacity-50 ${
+          type === "receita" ? "bg-t-income" : "bg-t-accent"
         }`}
       >
         {isSubmitting ? "Salvando..." : "Confirmar Lançamento"}

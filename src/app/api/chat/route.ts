@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY ?? "" });
 
-const SYSTEM_PROMPT = `Você é o Agente Financeiro do War Room Finance — consultor direto, estratégico e motivador.
+const SYSTEM_PROMPT = `Você é o Agente Financeiro do Destrava — consultor direto, estratégico e motivador.
 
 Contexto: usuário brasileiro com renda ~R$4.500/mês em situação de sufoco financeiro. Você tem acesso aos dados reais dele.
 

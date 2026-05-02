@@ -1,4 +1,4 @@
-const CACHE_NAME = "warroom-v1";
+const CACHE_NAME = "destrava-v1";
 const OFFLINE_URL = "/login";
 
 self.addEventListener("install", (event) => {

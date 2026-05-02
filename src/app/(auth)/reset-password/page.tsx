@@ -14,30 +14,24 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setReady(true);
-      }
+      if (event === "PASSWORD_RECOVERY") setReady(true);
     });
   }, []);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
-
     if (password !== confirmPassword) {
       setMessage("As senhas não coincidem.");
       return;
     }
-
     if (password.length < 6) {
       setMessage("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
-
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-
     if (error) {
       setMessage(error.message);
     } else {
@@ -48,18 +42,18 @@ export default function ResetPasswordPage() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-slate-400">Verificando link de recuperação...</p>
+      <div className="bg-t-bg text-t-text flex min-h-screen items-center justify-center">
+        <p className="text-t-muted">Verificando link de recuperação...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-slate-950 p-6 text-white">
+    <div className="bg-t-bg text-t-text flex min-h-screen flex-col justify-center p-6">
       <div className="mx-auto w-full max-w-sm space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold">Nova Senha 🔒</h2>
-          <p className="mt-2 text-slate-400">Defina sua nova senha abaixo.</p>
+          <p className="text-t-muted mt-2">Defina sua nova senha abaixo.</p>
         </div>
 
         <form onSubmit={handleUpdate} className="space-y-4">
@@ -72,7 +66,7 @@ export default function ResetPasswordPage() {
 
           {message && (
             <p
-              className={`text-center text-sm ${message.includes("atualizada") ? "text-emerald-400" : "text-rose-400"}`}
+              className={`text-center text-sm ${message.includes("atualizada") ? "text-t-success" : "text-t-danger"}`}
             >
               {message}
             </p>
@@ -81,7 +75,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-blue-600 p-4 font-bold disabled:opacity-50"
+            className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Salvar Nova Senha"}
           </button>

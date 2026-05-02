@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme, THEME_LABELS, Theme } from "@/hooks/useTheme";
 import { useRouter } from "next/navigation";
-import { Mail, Shield, LogOut, ChevronRight } from "lucide-react";
+import { Mail, Shield, LogOut, ChevronRight, Palette, Check } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { theme, changeTheme } = useTheme();
   const router = useRouter();
 
   const [newEmail, setNewEmail] = useState("");
@@ -15,16 +17,14 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [section, setSection] = useState<"menu" | "email" | "password">("menu");
+  const [section, setSection] = useState<"menu" | "email" | "password" | "theme">("menu");
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
-
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     setLoading(false);
-
     if (error) {
       setMessage(error.message);
     } else {
@@ -36,21 +36,17 @@ export default function ProfilePage() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
-
     if (newPassword !== confirmPassword) {
       setMessage("As senhas não coincidem.");
       return;
     }
-
     if (newPassword.length < 6) {
       setMessage("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
-
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setLoading(false);
-
     if (error) {
       setMessage(error.message);
     } else {
@@ -69,33 +65,49 @@ export default function ProfilePage() {
 
   return (
     <main className="p-4">
-      {/* Avatar e info */}
       <div className="mb-8 flex flex-col items-center gap-3 pt-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600 text-3xl font-bold">
+        <div className="bg-t-accent flex h-20 w-20 items-center justify-center rounded-full text-3xl font-bold text-white">
           {initial}
         </div>
         <div className="text-center">
           <p className="font-bold">{user?.email}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-t-muted text-xs">
             Membro desde {new Date(user?.created_at ?? "").toLocaleDateString("pt-BR")}
           </p>
         </div>
       </div>
 
       {section === "menu" && (
-        <div className="space-y-3">
+        <div className="space-y-3" role="list" aria-label="Configurações">
+          <button
+            onClick={() => {
+              setSection("theme");
+              setMessage("");
+            }}
+            className="border-t-border bg-t-surface flex w-full items-center justify-between rounded-2xl border p-4"
+          >
+            <div className="flex items-center gap-3">
+              <Palette size={18} className="text-t-accent" />
+              <div className="text-left">
+                <span className="text-sm font-medium">Tema</span>
+                <p className="text-t-muted text-[10px]">{THEME_LABELS[theme]}</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-t-muted" />
+          </button>
+
           <button
             onClick={() => {
               setSection("email");
               setMessage("");
             }}
-            className="flex w-full items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4"
+            className="border-t-border bg-t-surface flex w-full items-center justify-between rounded-2xl border p-4"
           >
             <div className="flex items-center gap-3">
-              <Mail size={18} className="text-blue-400" />
+              <Mail size={18} className="text-t-accent" />
               <span className="text-sm font-medium">Alterar e-mail</span>
             </div>
-            <ChevronRight size={16} className="text-slate-600" />
+            <ChevronRight size={16} className="text-t-muted" />
           </button>
 
           <button
@@ -103,22 +115,59 @@ export default function ProfilePage() {
               setSection("password");
               setMessage("");
             }}
-            className="flex w-full items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4"
+            className="border-t-border bg-t-surface flex w-full items-center justify-between rounded-2xl border p-4"
           >
             <div className="flex items-center gap-3">
-              <Shield size={18} className="text-blue-400" />
+              <Shield size={18} className="text-t-accent" />
               <span className="text-sm font-medium">Alterar senha</span>
             </div>
-            <ChevronRight size={16} className="text-slate-600" />
+            <ChevronRight size={16} className="text-t-muted" />
           </button>
 
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-2xl border border-rose-900/50 bg-rose-950/30 p-4"
+            className="border-t-danger/30 bg-t-danger/10 flex w-full items-center gap-3 rounded-2xl border p-4"
           >
-            <LogOut size={18} className="text-rose-400" />
-            <span className="text-sm font-medium text-rose-400">Sair da conta</span>
+            <LogOut size={18} className="text-t-danger" />
+            <span className="text-t-danger text-sm font-medium">Sair da conta</span>
           </button>
+        </div>
+      )}
+
+      {section === "theme" && (
+        <div className="space-y-4">
+          <button
+            onClick={() => setSection("menu")}
+            className="text-t-muted hover:text-t-text text-sm"
+          >
+            ← Voltar
+          </button>
+          <h3 className="text-lg font-bold">Tema</h3>
+          <div className="space-y-2">
+            {(Object.keys(THEME_LABELS) as Theme[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => changeTheme(t)}
+                className={`flex w-full items-center justify-between rounded-2xl border p-4 transition-all ${
+                  theme === t ? "border-t-accent bg-t-accent/10" : "border-t-border bg-t-surface"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-4 w-4 rounded-full ${
+                      t === "dark"
+                        ? "bg-slate-900 ring-1 ring-slate-600"
+                        : t === "light"
+                          ? "bg-white ring-1 ring-slate-300"
+                          : "bg-gradient-to-r from-sky-400 to-orange-400"
+                    }`}
+                  />
+                  <span className="text-sm font-medium">{THEME_LABELS[t]}</span>
+                </div>
+                {theme === t && <Check size={18} className="text-t-accent" />}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -126,41 +175,37 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <button
             onClick={() => setSection("menu")}
-            className="text-sm text-slate-500 hover:text-white"
+            className="text-t-muted hover:text-t-text text-sm"
           >
             ← Voltar
           </button>
-
           <h3 className="text-lg font-bold">Alterar E-mail</h3>
-          <p className="text-xs text-slate-500">
-            Atual: <span className="text-slate-300">{user?.email}</span>
+          <p className="text-t-muted text-xs">
+            Atual: <span className="text-t-text">{user?.email}</span>
           </p>
-
           <form onSubmit={handleUpdateEmail} className="space-y-4">
             <div className="relative">
-              <Mail className="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500" size={18} />
+              <Mail className="text-t-muted absolute top-1/2 left-4 -translate-y-1/2" size={18} />
               <input
                 type="email"
                 placeholder="Novo e-mail"
                 value={newEmail}
                 required
-                className="w-full rounded-2xl border border-slate-800 bg-slate-900 py-4 pr-4 pl-11 outline-none focus:ring-2 focus:ring-blue-600"
+                className="border-t-border bg-t-surface focus:ring-t-accent w-full rounded-2xl border py-4 pr-4 pl-11 outline-none focus:ring-2"
                 onChange={(e) => setNewEmail(e.target.value)}
               />
             </div>
-
             {message && (
               <p
-                className={`text-center text-sm ${message.includes("confirmação") ? "text-emerald-400" : "text-rose-400"}`}
+                className={`text-center text-sm ${message.includes("confirmação") ? "text-t-success" : "text-t-danger"}`}
               >
                 {message}
               </p>
             )}
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-blue-600 p-4 font-bold disabled:opacity-50"
+              className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
             >
               {loading ? "Salvando..." : "Atualizar E-mail"}
             </button>
@@ -172,13 +217,11 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <button
             onClick={() => setSection("menu")}
-            className="text-sm text-slate-500 hover:text-white"
+            className="text-t-muted hover:text-t-text text-sm"
           >
             ← Voltar
           </button>
-
           <h3 className="text-lg font-bold">Alterar Senha</h3>
-
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <PasswordInput placeholder="Nova senha" value={newPassword} onChange={setNewPassword} />
             <PasswordInput
@@ -186,19 +229,17 @@ export default function ProfilePage() {
               value={confirmPassword}
               onChange={setConfirmPassword}
             />
-
             {message && (
               <p
-                className={`text-center text-sm ${message.includes("sucesso") ? "text-emerald-400" : "text-rose-400"}`}
+                className={`text-center text-sm ${message.includes("sucesso") ? "text-t-success" : "text-t-danger"}`}
               >
                 {message}
               </p>
             )}
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-blue-600 p-4 font-bold disabled:opacity-50"
+              className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
             >
               {loading ? "Salvando..." : "Atualizar Senha"}
             </button>

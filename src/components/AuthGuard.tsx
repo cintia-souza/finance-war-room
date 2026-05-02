@@ -5,8 +5,8 @@ import { useEffect } from "react";
 
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950">
-      <div className="h-8 w-8 animate-spin rounded-full border-t-2 border-blue-600" />
+    <div className="bg-t-bg flex min-h-screen items-center justify-center">
+      <div className="border-t-accent h-8 w-8 animate-spin rounded-full border-t-2" />
     </div>
   );
 }
@@ -16,13 +16,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !session) {
-      router.replace("/login");
-    }
+    if (!loading && !session) router.replace("/login");
   }, [loading, session, router]);
 
   if (loading || !session) return <LoadingScreen />;
-
   return <>{children}</>;
 }
 
@@ -31,12 +28,9 @@ export function GuestGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && session) {
-      router.replace("/dashboard");
-    }
+    if (!loading && session) router.replace("/dashboard");
   }, [loading, session, router]);
 
   if (loading || session) return <LoadingScreen />;
-
   return <>{children}</>;
 }

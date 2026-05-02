@@ -1,4 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#020617"/>
-  <text x="256" y="300" font-size="240" text-anchor="middle" fill="#3b82f6" font-family="Arial,sans-serif" font-weight="bold">W</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#020617"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#6366f1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Unlock icon (arco aberto) -->
+  <path d="M 220 160 C 220 120, 260 90, 300 90 C 340 90, 370 115, 370 155" 
+        fill="none" stroke="url(#accent)" stroke-width="28" stroke-linecap="round"/>
+  <!-- Lock body -->
+  <rect x="180" y="220" width="200" height="170" rx="24" fill="url(#accent)"/>
+  <!-- Keyhole -->
+  <circle cx="280" cy="295" r="22" fill="#020617"/>
+  <rect x="272" y="305" width="16" height="40" rx="8" fill="#020617"/>
+  <!-- Glow effect -->
+  <circle cx="280" cy="295" r="60" fill="#3b82f6" opacity="0.08"/>
 </svg>

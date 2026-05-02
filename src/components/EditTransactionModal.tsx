@@ -10,6 +10,7 @@ import {
 } from "@/types/finance";
 import { financeService } from "@/app/services/finance";
 import { X } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 
 interface EditTransactionModalProps {
   transaction: Transaction;
@@ -31,7 +32,6 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       await financeService.updateTransaction(transaction.id, {
         description,
@@ -52,7 +52,6 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
   const handleDelete = async () => {
     if (!confirm("Tem certeza que deseja excluir este lançamento?")) return;
     setLoading(true);
-
     try {
       await financeService.deleteTransaction(transaction.id);
       onSaved();
@@ -63,107 +62,148 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
     }
   };
 
+  const inputClass =
+    "w-full rounded-2xl border border-t-border bg-t-bg p-4 text-t-text outline-none focus:ring-2 focus:ring-t-accent";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/80 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-black/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Editar lançamento"
+    >
       <div className="mx-auto w-full max-w-lg">
         <div className="flex justify-end p-4">
-          <button onClick={onClose} className="text-slate-400">
+          <button onClick={onClose} className="text-t-muted" aria-label="Fechar">
             <X size={24} />
           </button>
         </div>
 
         <form
           onSubmit={handleSave}
-          className="space-y-4 rounded-t-3xl border-t border-slate-800 bg-slate-900 p-6"
+          className="border-t-border bg-t-surface max-h-[85vh] space-y-4 overflow-y-auto rounded-t-3xl border-t p-6"
         >
-          <h3 className="text-lg font-bold text-white">Editar Lançamento</h3>
+          <h3 className="text-lg font-bold">Editar Lançamento</h3>
 
-          {/* Toggle Receita/Despesa */}
-          <div className="flex gap-2 rounded-2xl bg-slate-800 p-1">
+          <div className="bg-t-bg flex gap-2 rounded-2xl p-1" role="radiogroup">
             <button
               type="button"
+              role="radio"
+              aria-checked={type === "despesa"}
               onClick={() => {
                 setType("despesa");
                 setCategory("moradia");
               }}
               className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
-                type === "despesa" ? "bg-rose-600 text-white" : "text-slate-400"
+                type === "despesa" ? "bg-t-expense text-white" : "text-t-muted"
               }`}
             >
               Despesa
             </button>
             <button
               type="button"
+              role="radio"
+              aria-checked={type === "receita"}
               onClick={() => {
                 setType("receita");
                 setCategory("salario");
               }}
               className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
-                type === "receita" ? "bg-emerald-600 text-white" : "text-slate-400"
+                type === "receita" ? "bg-t-income text-white" : "text-t-muted"
               }`}
             >
               Receita
             </button>
           </div>
 
-          <input
-            type="text"
-            placeholder="Descrição"
-            value={description}
-            required
-            className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-white outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setDescription(e.target.value)}
-          />
-
-          <div className="flex gap-3">
+          <div>
+            <label htmlFor="edit-desc" className="sr-only">
+              Descrição
+            </label>
             <input
-              type="number"
-              step="0.01"
-              placeholder="Valor"
-              value={amount}
+              id="edit-desc"
+              type="text"
+              placeholder="Descrição"
+              value={description}
               required
-              className="flex-1 rounded-2xl border border-slate-700 bg-slate-800 p-4 font-mono text-white outline-none focus:ring-2 focus:ring-blue-600"
-              onChange={(e) => setAmount(e.target.value)}
+              className={inputClass}
+              onChange={(e) => setDescription(e.target.value)}
             />
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as TransactionCategory)}
-              className="max-w-[140px] rounded-2xl border border-slate-700 bg-slate-800 p-4 text-sm text-white outline-none"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]}
-                </option>
-              ))}
-            </select>
           </div>
 
-          <input
-            type="date"
-            value={dueDate}
-            className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-white outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setDueDate(e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="edit-amount" className="sr-only">
+                Valor
+              </label>
+              <input
+                id="edit-amount"
+                type="number"
+                step="0.01"
+                placeholder="Valor"
+                value={amount}
+                required
+                className={`${inputClass} font-mono`}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="edit-category" className="sr-only">
+                Categoria
+              </label>
+              <select
+                id="edit-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as TransactionCategory)}
+                className={`${inputClass} text-sm`}
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {CATEGORY_LABELS[cat]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="edit-date" className="sr-only">
+              Data
+            </label>
+            <input
+              id="edit-date"
+              type="date"
+              value={dueDate}
+              className={inputClass}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
 
           {transaction.total_installments && (
-            <p className="text-xs text-slate-500">
+            <p className="text-t-muted text-xs">
               Parcela {transaction.current_installment}/{transaction.total_installments}
-              {transaction.total_debt && ` • Dívida total: R$ ${transaction.total_debt.toFixed(2)}`}
+              {transaction.total_debt && ` • Dívida total: ${formatBRL(transaction.total_debt)}`}
             </p>
           )}
 
-          <textarea
-            placeholder="Observações (opcional)"
-            rows={2}
-            value={notes}
-            className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-sm text-white outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setNotes(e.target.value)}
-          />
+          <div>
+            <label htmlFor="edit-notes" className="sr-only">
+              Observações
+            </label>
+            <textarea
+              id="edit-notes"
+              placeholder="Observações (opcional)"
+              rows={2}
+              value={notes}
+              className={`${inputClass} text-sm`}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-blue-600 p-4 font-bold text-white disabled:opacity-50"
+            className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Salvar Alterações"}
           </button>
@@ -172,7 +212,7 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
             type="button"
             onClick={handleDelete}
             disabled={loading}
-            className="w-full rounded-2xl border border-rose-900/50 bg-rose-950/30 p-4 font-bold text-rose-400 disabled:opacity-50"
+            className="border-t-danger/30 bg-t-danger/10 text-t-danger w-full rounded-2xl border p-4 font-bold disabled:opacity-50"
           >
             Excluir Lançamento
           </button>

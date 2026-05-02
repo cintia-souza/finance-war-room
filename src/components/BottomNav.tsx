@@ -21,27 +21,32 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 z-40 flex w-full border-t border-slate-800 bg-slate-950/95 backdrop-blur-md">
+    <nav
+      className="border-t-border bg-t-bg/95 fixed bottom-0 left-0 z-40 flex w-full border-t backdrop-blur-md"
+      role="navigation"
+      aria-label="Menu principal"
+    >
       {navItems.map(({ href, label, icon: Icon }) => {
         const active = pathname === href;
         return (
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition-colors ${
-              active ? "text-blue-500" : "text-slate-500 hover:text-slate-300"
+              active ? "text-t-accent" : "text-t-muted hover:text-t-text"
             }`}
           >
-            <Icon size={20} />
+            <Icon size={20} aria-hidden="true" />
             {label}
           </Link>
         );
       })}
       <button
         onClick={handleLogout}
-        className="flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold text-slate-500 transition-colors hover:text-rose-400"
+        className="text-t-muted hover:text-t-danger flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition-colors"
       >
-        <LogOut size={20} />
+        <LogOut size={20} aria-hidden="true" />
         Sair
       </button>
     </nav>

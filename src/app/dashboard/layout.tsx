@@ -5,7 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-slate-950 pb-20 text-white">
+      <div className="bg-t-bg text-t-text min-h-screen pb-20">
         {children}
         <BottomNav />
       </div>

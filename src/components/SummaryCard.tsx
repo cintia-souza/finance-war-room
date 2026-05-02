@@ -4,19 +4,19 @@ export function SummaryCard({ income, expenses }: { income: number; expenses: nu
   const balance = income - expenses;
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <p className="text-sm text-slate-400">Renda Prevista</p>
-        <p className="text-2xl font-bold text-emerald-500">{formatBRL(income)}</p>
+      <div className="border-t-border bg-t-surface rounded-2xl border p-4">
+        <p className="text-t-muted text-sm">Renda Prevista</p>
+        <p className="text-t-income text-2xl font-bold">{formatBRL(income)}</p>
       </div>
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <p className="text-sm text-slate-400">Dívidas/Gastos do Mês</p>
-        <p className="text-2xl font-bold text-rose-500">{formatBRL(expenses)}</p>
+      <div className="border-t-border bg-t-surface rounded-2xl border p-4">
+        <p className="text-t-muted text-sm">Dívidas/Gastos do Mês</p>
+        <p className="text-t-expense text-2xl font-bold">{formatBRL(expenses)}</p>
       </div>
       <div
-        className={`rounded-2xl border p-4 ${balance < 0 ? "border-rose-900 bg-rose-950" : "border-slate-800 bg-slate-900"}`}
+        className={`rounded-2xl border p-4 ${balance < 0 ? "border-t-danger/30 bg-t-danger/10" : "border-t-border bg-t-surface"}`}
       >
-        <p className="text-sm text-slate-400">Saldo Restante (Fôlego)</p>
-        <p className={`text-2xl font-bold ${balance < 0 ? "text-rose-400" : "text-white"}`}>
+        <p className="text-t-muted text-sm">Saldo Restante (Fôlego)</p>
+        <p className={`text-2xl font-bold ${balance < 0 ? "text-t-danger" : "text-t-text"}`}>
           {formatBRL(balance)}
         </p>
       </div>

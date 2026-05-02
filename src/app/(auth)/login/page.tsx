@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Mail } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 
@@ -17,10 +18,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-
     if (error) {
       setError(error.message);
     } else {
@@ -29,43 +28,44 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-slate-950 p-6 text-white">
+    <div className="bg-t-bg text-t-text flex min-h-screen flex-col justify-center p-6">
       <div className="mx-auto w-full max-w-sm space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Acesso ao Front 🪖</h2>
-          <p className="mt-2 text-slate-400">Gerencie suas dívidas e sua reforma.</p>
+          <Image src="/icon.svg" alt="Destrava" width={64} height={64} className="mx-auto mb-4" />
+          <h2 className="text-3xl font-bold">Destrava 🔓</h2>
+          <p className="text-t-muted mt-2">Destravar sua vida financeira.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="relative">
-            <Mail className="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500" size={18} />
+            <Mail className="text-t-muted absolute top-1/2 left-4 -translate-y-1/2" size={18} />
             <input
               type="email"
               placeholder="Seu e-mail"
               value={email}
               required
-              className="w-full rounded-2xl border border-slate-800 bg-slate-900 py-4 pr-4 pl-11 outline-none focus:ring-2 focus:ring-blue-600"
+              className="border-t-border bg-t-surface text-t-text focus:ring-t-accent w-full rounded-2xl border py-4 pr-4 pl-11 outline-none focus:ring-2"
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
           <PasswordInput placeholder="Sua senha" value={password} onChange={setPassword} />
 
-          {error && <p className="text-center text-sm text-rose-400">{error}</p>}
+          {error && <p className="text-t-danger text-center text-sm">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-blue-600 p-4 font-bold disabled:opacity-50"
+            className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <Link href="/signup" className="hover:text-white">
+          <div className="text-t-muted flex items-center justify-between text-sm">
+            <Link href="/signup" className="hover:text-t-text">
               Criar conta
             </Link>
-            <Link href="/forgot-password" className="hover:text-white">
+            <Link href="/forgot-password" className="hover:text-t-text">
               Esqueci a senha
             </Link>
           </div>
