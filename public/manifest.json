@@ -1,0 +1,14 @@
+{
+  "name": "War Room Finance",
+  "short_name": "WarRoom",
+  "description": "Controle de guerra financeira",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait"
+}
