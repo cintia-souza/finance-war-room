@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -62,21 +63,11 @@ export default function ResetPasswordPage() {
         </div>
 
         <form onSubmit={handleUpdate} className="space-y-4">
-          <input
-            type="password"
-            placeholder="Nova senha"
-            value={password}
-            required
-            className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-4 outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <input
-            type="password"
+          <PasswordInput placeholder="Nova senha" value={password} onChange={setPassword} />
+          <PasswordInput
             placeholder="Confirme a nova senha"
             value={confirmPassword}
-            required
-            className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-4 outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={setConfirmPassword}
           />
 
           {message && (

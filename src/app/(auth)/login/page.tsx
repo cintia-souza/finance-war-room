@@ -3,6 +3,8 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Mail } from "lucide-react";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -35,22 +37,19 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Seu e-mail"
-            value={email}
-            required
-            className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-4 outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Sua senha"
-            value={password}
-            required
-            className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-4 outline-none focus:ring-2 focus:ring-blue-600"
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="relative">
+            <Mail className="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500" size={18} />
+            <input
+              type="email"
+              placeholder="Seu e-mail"
+              value={email}
+              required
+              className="w-full rounded-2xl border border-slate-800 bg-slate-900 py-4 pr-4 pl-11 outline-none focus:ring-2 focus:ring-blue-600"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <PasswordInput placeholder="Sua senha" value={password} onChange={setPassword} />
 
           {error && <p className="text-center text-sm text-rose-400">{error}</p>}
 
