@@ -1,9 +1,12 @@
 "use client";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Bot, User, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { AnimatePresence } from "framer-motion";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -14,6 +17,7 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [showLogout, setShowLogout] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -43,12 +47,26 @@ export function BottomNav() {
         );
       })}
       <button
-        onClick={handleLogout}
+        onClick={() => setShowLogout(true)}
         className="text-t-muted hover:text-t-danger flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-bold transition-colors"
       >
         <LogOut size={20} aria-hidden="true" />
         Sair
       </button>
+
+      <AnimatePresence>
+        {showLogout && (
+          <ConfirmModal
+            title="Sair da conta"
+            message="Tem certeza que deseja sair?"
+            confirmLabel="Sair"
+            cancelLabel="Ficar"
+            danger
+            onConfirm={handleLogout}
+            onCancel={() => setShowLogout(false)}
+          />
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

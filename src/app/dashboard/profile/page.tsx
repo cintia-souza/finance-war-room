@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme, THEME_LABELS, Theme } from "@/hooks/useTheme";
 import { useRouter } from "next/navigation";
 import { Mail, Shield, LogOut, ChevronRight, Palette, Check } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -18,6 +20,7 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [section, setSection] = useState<"menu" | "email" | "password" | "theme">("menu");
+  const [showLogout, setShowLogout] = useState(false);
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +66,14 @@ export default function ProfilePage() {
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "?";
 
+  const menuBtnClass =
+    "flex w-full cursor-pointer items-center justify-between rounded-2xl border border-t-border bg-t-surface p-4 transition-colors hover:bg-t-border/50";
+  const backBtnClass = "cursor-pointer text-sm text-t-muted transition-colors hover:text-t-text";
+  const submitBtnClass =
+    "w-full cursor-pointer rounded-2xl bg-t-accent p-4 font-bold text-white transition-colors hover:bg-t-accent-hover disabled:opacity-50";
+  const inputClass =
+    "w-full rounded-2xl border border-t-border bg-t-surface py-4 pr-4 pl-11 text-t-text outline-none focus:ring-2 focus:ring-t-accent";
+
   return (
     <main className="p-4">
       <div className="mb-8 flex flex-col items-center gap-3 pt-4">
@@ -84,7 +95,7 @@ export default function ProfilePage() {
               setSection("theme");
               setMessage("");
             }}
-            className="border-t-border bg-t-surface flex w-full items-center justify-between rounded-2xl border p-4"
+            className={menuBtnClass}
           >
             <div className="flex items-center gap-3">
               <Palette size={18} className="text-t-accent" />
@@ -101,7 +112,7 @@ export default function ProfilePage() {
               setSection("email");
               setMessage("");
             }}
-            className="border-t-border bg-t-surface flex w-full items-center justify-between rounded-2xl border p-4"
+            className={menuBtnClass}
           >
             <div className="flex items-center gap-3">
               <Mail size={18} className="text-t-accent" />
@@ -115,7 +126,7 @@ export default function ProfilePage() {
               setSection("password");
               setMessage("");
             }}
-            className="border-t-border bg-t-surface flex w-full items-center justify-between rounded-2xl border p-4"
+            className={menuBtnClass}
           >
             <div className="flex items-center gap-3">
               <Shield size={18} className="text-t-accent" />
@@ -125,21 +136,32 @@ export default function ProfilePage() {
           </button>
 
           <button
-            onClick={handleLogout}
-            className="border-t-danger/30 bg-t-danger/10 flex w-full items-center gap-3 rounded-2xl border p-4"
+            onClick={() => setShowLogout(true)}
+            className="border-t-danger/30 bg-t-danger/10 hover:bg-t-danger/20 flex w-full cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-colors"
           >
             <LogOut size={18} className="text-t-danger" />
             <span className="text-t-danger text-sm font-medium">Sair da conta</span>
           </button>
+
+          <AnimatePresence>
+            {showLogout && (
+              <ConfirmModal
+                title="Sair da conta"
+                message="Tem certeza que deseja sair?"
+                confirmLabel="Sair"
+                cancelLabel="Ficar"
+                danger
+                onConfirm={handleLogout}
+                onCancel={() => setShowLogout(false)}
+              />
+            )}
+          </AnimatePresence>
         </div>
       )}
 
       {section === "theme" && (
         <div className="space-y-4">
-          <button
-            onClick={() => setSection("menu")}
-            className="text-t-muted hover:text-t-text text-sm"
-          >
+          <button onClick={() => setSection("menu")} className={backBtnClass}>
             ← Voltar
           </button>
           <h3 className="text-lg font-bold">Tema</h3>
@@ -148,7 +170,7 @@ export default function ProfilePage() {
               <button
                 key={t}
                 onClick={() => changeTheme(t)}
-                className={`flex w-full items-center justify-between rounded-2xl border p-4 transition-all ${
+                className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all hover:opacity-80 ${
                   theme === t ? "border-t-accent bg-t-accent/10" : "border-t-border bg-t-surface"
                 }`}
               >
@@ -173,10 +195,7 @@ export default function ProfilePage() {
 
       {section === "email" && (
         <div className="space-y-4">
-          <button
-            onClick={() => setSection("menu")}
-            className="text-t-muted hover:text-t-text text-sm"
-          >
+          <button onClick={() => setSection("menu")} className={backBtnClass}>
             ← Voltar
           </button>
           <h3 className="text-lg font-bold">Alterar E-mail</h3>
@@ -191,7 +210,7 @@ export default function ProfilePage() {
                 placeholder="Novo e-mail"
                 value={newEmail}
                 required
-                className="border-t-border bg-t-surface focus:ring-t-accent w-full rounded-2xl border py-4 pr-4 pl-11 outline-none focus:ring-2"
+                className={inputClass}
                 onChange={(e) => setNewEmail(e.target.value)}
               />
             </div>
@@ -202,11 +221,7 @@ export default function ProfilePage() {
                 {message}
               </p>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className={submitBtnClass}>
               {loading ? "Salvando..." : "Atualizar E-mail"}
             </button>
           </form>
@@ -215,10 +230,7 @@ export default function ProfilePage() {
 
       {section === "password" && (
         <div className="space-y-4">
-          <button
-            onClick={() => setSection("menu")}
-            className="text-t-muted hover:text-t-text text-sm"
-          >
+          <button onClick={() => setSection("menu")} className={backBtnClass}>
             ← Voltar
           </button>
           <h3 className="text-lg font-bold">Alterar Senha</h3>
@@ -236,11 +248,7 @@ export default function ProfilePage() {
                 {message}
               </p>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className={submitBtnClass}>
               {loading ? "Salvando..." : "Atualizar Senha"}
             </button>
           </form>
