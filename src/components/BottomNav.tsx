@@ -1,12 +1,13 @@
 "use client";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Bot, User, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard/consultor", label: "Consultor", icon: Bot },
   { href: "/dashboard/profile", label: "Perfil", icon: User },
 ];
 

@@ -1,9 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
-
-import { Transaction } from "@/types/finance";
+import { Transaction, CATEGORY_LABELS } from "@/types/finance";
 import { formatBRL } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Circle, MessageSquare, Pencil, Zap } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Pencil,
+  TrendingUp,
+  TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { financeService } from "@/app/services/finance";
 import AddTransactionForm from "@/components/AddTransactionForm";
@@ -13,14 +20,10 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-
-  const SALARIO_BASE = 4500;
-
-  const totalDividasPendente = transactions
-    .filter((t) => t.status === "pendente")
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const saldoDisponivel = SALARIO_BASE - totalDividasPendente;
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   useEffect(() => {
     let ignore = false;
@@ -36,138 +39,191 @@ export default function Dashboard() {
     financeService.getTransactions().then(setTransactions);
   }
 
-  const dividasCriticas = transactions.filter(
-    (t) =>
-      t.status === "pendente" &&
-      (t.description.toLowerCase().includes("sabesp") ||
-        t.description.toLowerCase().includes("luz")),
+  // Filtrar por mês
+  const monthTransactions = transactions.filter((t) => t.due_date?.startsWith(currentMonth));
+
+  const receitas = monthTransactions
+    .filter((t) => t.type === "receita")
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const despesas = monthTransactions
+    .filter((t) => t.type === "despesa")
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const despesasPagas = monthTransactions
+    .filter((t) => t.type === "despesa" && t.status === "pago")
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const saldo = receitas - despesas;
+
+  // Dívidas com parcelas (agrupar por descrição base)
+  const dividas = transactions.filter((t) => t.total_installments && t.total_installments > 1);
+  const dividasAgrupadas = dividas.reduce(
+    (acc, t) => {
+      const baseName = t.description.replace(/\s*\(\d+\/\d+\)$/, "");
+      if (!acc[baseName]) {
+        acc[baseName] = { total: 0, pagas: 0, totalDebt: t.total_debt ?? 0 };
+      }
+      acc[baseName].total = t.total_installments ?? 0;
+      if (t.status === "pago") acc[baseName].pagas++;
+      return acc;
+    },
+    {} as Record<string, { total: number; pagas: number; totalDebt: number }>,
   );
 
-  const copyNegotiationText = (description: string, amount: number) => {
-    const text = `Olá, gostaria de negociar o débito de ${description} no valor de ${formatBRL(amount)}. Tenho disponibilidade para quitar à vista com um desconto ou parcelar em condições que caibam no meu orçamento atual.`;
-    navigator.clipboard.writeText(text);
-    alert("Texto de negociação copiado!");
+  const navigateMonth = (direction: number) => {
+    const [year, month] = currentMonth.split("-").map(Number);
+    const date = new Date(year, month - 1 + direction, 1);
+    setCurrentMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`);
   };
+
+  const monthLabel = new Date(currentMonth + "-01").toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <main className="p-4">
       <DashboardHeader />
-      <div className="mb-8 grid grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <p className="text-xs font-bold text-slate-500 uppercase">Saldo Livre</p>
-          <p
-            className={`font-mono text-xl ${saldoDisponivel < 0 ? "text-rose-500" : "text-emerald-400"}`}
-          >
-            {formatBRL(saldoDisponivel)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <p className="text-xs font-bold text-slate-500 uppercase">Total Pendente</p>
-          <p className="font-mono text-xl text-rose-500">{formatBRL(totalDividasPendente)}</p>
-        </div>
+
+      {/* Navegação por mês */}
+      <div className="mb-6 flex items-center justify-between">
+        <button onClick={() => navigateMonth(-1)} className="p-2 text-slate-400">
+          <ChevronLeft size={20} />
+        </button>
+        <p className="text-sm font-bold text-slate-300 capitalize">{monthLabel}</p>
+        <button onClick={() => navigateMonth(1)} className="p-2 text-slate-400">
+          <ChevronRight size={20} />
+        </button>
       </div>
 
-      <div className="mb-8 flex items-center gap-4 rounded-2xl border border-blue-500/30 bg-blue-600/10 p-4">
-        <Zap className="text-blue-400" size={24} />
-        <div>
-          <h4 className="text-sm font-bold text-blue-400">Upgrade: Energia Solar</h4>
-          <p className="text-xs text-blue-200/60">
-            Parcela estimada: R$ 700,00 vs R$ 890,00 (Economia de R$ 190,00/mês)
-          </p>
-        </div>
-      </div>
-
-      {dividasCriticas.length > 0 && (
-        <section className="mb-8 animate-pulse">
-          <h3 className="mb-3 flex items-center gap-2 text-xs font-black text-amber-500 uppercase">
-            <AlertCircle size={14} /> Alvos Prioritários (Limpar Nome)
-          </h3>
-          <div className="space-y-3">
-            {dividasCriticas.map((t) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between rounded-2xl border border-amber-900/50 bg-amber-950/30 p-4"
-              >
-                <div>
-                  <p className="font-bold text-amber-200">{t.description}</p>
-                  <p className="text-[10px] text-amber-500/70">DÍVIDA EM PROTESTO</p>
-                </div>
-                <button
-                  onClick={() => financeService.toggleStatus(t.id, t.status).then(reload)}
-                  className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white"
-                >
-                  QUITAR
-                </button>
-              </div>
-            ))}
+      {/* Cards resumo */}
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3">
+          <div className="mb-1 flex items-center gap-1">
+            <TrendingUp size={12} className="text-emerald-500" />
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Receitas</p>
           </div>
+          <p className="font-mono text-sm font-bold text-emerald-400">{formatBRL(receitas)}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3">
+          <div className="mb-1 flex items-center gap-1">
+            <TrendingDown size={12} className="text-rose-500" />
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Despesas</p>
+          </div>
+          <p className="font-mono text-sm font-bold text-rose-400">{formatBRL(despesas)}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3">
+          <p className="mb-1 text-[10px] font-bold text-slate-500 uppercase">Saldo</p>
+          <p
+            className={`font-mono text-sm font-bold ${saldo >= 0 ? "text-emerald-400" : "text-rose-400"}`}
+          >
+            {formatBRL(saldo)}
+          </p>
+        </div>
+      </div>
+
+      {/* Barra de progresso do mês */}
+      {despesas > 0 && (
+        <div className="mb-8">
+          <div className="mb-1 flex justify-between text-[10px] text-slate-500">
+            <span>Pago: {formatBRL(despesasPagas)}</span>
+            <span>Total: {formatBRL(despesas)}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all"
+              style={{ width: `${Math.min((despesasPagas / despesas) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Progresso das dívidas parceladas */}
+      {Object.keys(dividasAgrupadas).length > 0 && (
+        <section className="mb-8 space-y-3">
+          <h3 className="px-1 text-xs font-black text-slate-500 uppercase">
+            Progresso das Dívidas
+          </h3>
+          {Object.entries(dividasAgrupadas).map(([name, info]) => {
+            const progress = (info.pagas / info.total) * 100;
+            return (
+              <div key={name} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                <div className="mb-1 flex justify-between">
+                  <p className="text-sm font-bold">{name}</p>
+                  <p className="text-xs text-slate-400">
+                    {info.pagas}/{info.total} parcelas
+                  </p>
+                </div>
+                {info.totalDebt > 0 && (
+                  <p className="mb-2 text-[10px] text-slate-500">
+                    Total: {formatBRL(info.totalDebt)}
+                  </p>
+                )}
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-blue-500 transition-all"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </section>
       )}
 
-      <section className="space-y-4">
-        <h3 className="px-1 text-xs font-black text-slate-500 uppercase">
-          Linha de Frente (Dívidas)
-        </h3>
-        {transactions.map((t) => (
+      {/* Lista de transações do mês */}
+      <section className="space-y-3">
+        <h3 className="px-1 text-xs font-black text-slate-500 uppercase">Lançamentos do Mês</h3>
+        {monthTransactions.length === 0 && (
+          <p className="py-8 text-center text-sm text-slate-600">Nenhum lançamento neste mês.</p>
+        )}
+        {monthTransactions.map((t) => (
           <div
             key={t.id}
             className={`flex items-center justify-between rounded-2xl border p-4 transition-all ${
               t.status === "pago"
                 ? "border-slate-900 bg-slate-900/30 opacity-40"
-                : "border-slate-800 bg-slate-900 shadow-sm"
+                : "border-slate-800 bg-slate-900"
             }`}
           >
-            <div className="flex items-center gap-4">
-              {/* Botão de Toggle Status */}
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => {
-                  financeService.toggleStatus(t.id, t.status).then(reload);
-                }}
+                onClick={() => financeService.toggleStatus(t.id, t.status).then(reload)}
                 className="shrink-0 transition-transform active:scale-90"
               >
                 {t.status === "pago" ? (
-                  <CheckCircle2 className="text-emerald-500" />
+                  <CheckCircle2 className="text-emerald-500" size={20} />
                 ) : (
-                  <Circle className="text-slate-700 hover:text-slate-500" />
+                  <Circle className="text-slate-700 hover:text-slate-500" size={20} />
                 )}
               </button>
-
-              {/* Info da Transação */}
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-white">{t.description}</p>
-                <p className="text-[10px] font-medium tracking-wider text-slate-500">
-                  {t.category.toUpperCase()}
+                <p className="truncate text-sm font-bold">{t.description}</p>
+                <p className="text-[10px] text-slate-500">
+                  {CATEGORY_LABELS[t.category] ?? t.category}
+                  {t.is_recurring && " • Fixo"}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Botão de Editar */}
               <button
                 onClick={() => setEditingTransaction(t)}
-                className="rounded-full bg-slate-800 p-2 text-slate-400 transition-colors hover:bg-slate-700 hover:text-blue-400"
-                title="Editar lançamento"
+                className="rounded-full bg-slate-800 p-1.5 text-slate-400 hover:text-blue-400"
               >
-                <Pencil size={14} />
+                <Pencil size={12} />
               </button>
-
-              {/* Botão de Negociação */}
-              {t.status === "pendente" && (
-                <button
-                  onClick={() => copyNegotiationText(t.description, t.amount)}
-                  className="rounded-full bg-slate-800 p-2 text-slate-400 transition-colors hover:bg-slate-700 hover:text-blue-400"
-                  title="Copiar texto de negociação"
-                >
-                  <MessageSquare size={14} />
-                </button>
-              )}
-
-              {/* Valor */}
               <p
-                className={`shrink-0 font-mono font-bold ${
-                  t.status === "pago" ? "text-slate-500" : "text-white"
+                className={`font-mono text-sm font-bold ${
+                  t.type === "receita"
+                    ? "text-emerald-400"
+                    : t.status === "pago"
+                      ? "text-slate-500"
+                      : "text-white"
                 }`}
               >
+                {t.type === "receita" ? "+" : "-"}
                 {formatBRL(t.amount)}
               </p>
             </div>
