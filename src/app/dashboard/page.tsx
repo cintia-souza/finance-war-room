@@ -3,13 +3,16 @@ import { useEffect, useState } from "react";
 
 import { Transaction } from "@/types/finance";
 import { formatBRL } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Circle, MessageSquare, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, MessageSquare, Pencil, Zap } from "lucide-react";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import { financeService } from "@/app/services/finance";
 import AddTransactionForm from "@/components/AddTransactionForm";
+import { EditTransactionModal } from "@/components/EditTransactionModal";
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const SALARIO_BASE = 4500;
 
@@ -47,24 +50,22 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 p-4 pb-24 text-white">
-      <header className="mb-8 pt-4">
-        <h1 className="text-2xl font-bold tracking-tight italic">WAR ROOM</h1>
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-            <p className="text-xs font-bold text-slate-500 uppercase">Saldo Livre</p>
-            <p
-              className={`font-mono text-xl ${saldoDisponivel < 0 ? "text-rose-500" : "text-emerald-400"}`}
-            >
-              {formatBRL(saldoDisponivel)}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-            <p className="text-xs font-bold text-slate-500 uppercase">Total Pendente</p>
-            <p className="font-mono text-xl text-rose-500">{formatBRL(totalDividasPendente)}</p>
-          </div>
+    <main className="p-4">
+      <DashboardHeader />
+      <div className="mb-8 grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <p className="text-xs font-bold text-slate-500 uppercase">Saldo Livre</p>
+          <p
+            className={`font-mono text-xl ${saldoDisponivel < 0 ? "text-rose-500" : "text-emerald-400"}`}
+          >
+            {formatBRL(saldoDisponivel)}
+          </p>
         </div>
-      </header>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <p className="text-xs font-bold text-slate-500 uppercase">Total Pendente</p>
+          <p className="font-mono text-xl text-rose-500">{formatBRL(totalDividasPendente)}</p>
+        </div>
+      </div>
 
       <div className="mb-8 flex items-center gap-4 rounded-2xl border border-blue-500/30 bg-blue-600/10 p-4">
         <Zap className="text-blue-400" size={24} />
@@ -140,15 +141,24 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Botão de Negociação (Aparece apenas se não estiver pago) */}
+            <div className="flex items-center gap-2">
+              {/* Botão de Editar */}
+              <button
+                onClick={() => setEditingTransaction(t)}
+                className="rounded-full bg-slate-800 p-2 text-slate-400 transition-colors hover:bg-slate-700 hover:text-blue-400"
+                title="Editar lançamento"
+              >
+                <Pencil size={14} />
+              </button>
+
+              {/* Botão de Negociação */}
               {t.status === "pendente" && (
                 <button
                   onClick={() => copyNegotiationText(t.description, t.amount)}
-                  className="rounded-full bg-slate-800 p-2 text-slate-400 transition-colors hover:bg-slate-700 hover:text-blue-400 active:bg-blue-900/20"
+                  className="rounded-full bg-slate-800 p-2 text-slate-400 transition-colors hover:bg-slate-700 hover:text-blue-400"
                   title="Copiar texto de negociação"
                 >
-                  <MessageSquare size={16} />
+                  <MessageSquare size={14} />
                 </button>
               )}
 
@@ -164,6 +174,17 @@ export default function Dashboard() {
           </div>
         ))}
       </section>
+
+      {editingTransaction && (
+        <EditTransactionModal
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onSaved={() => {
+            setEditingTransaction(null);
+            reload();
+          }}
+        />
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/80 backdrop-blur-sm">
@@ -185,7 +206,7 @@ export default function Dashboard() {
 
       <button
         onClick={() => setShowForm(true)}
-        className="fixed right-6 bottom-8 flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-3xl font-light shadow-2xl shadow-blue-500/40 transition-all hover:scale-110 active:scale-95"
+        className="fixed right-6 bottom-24 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-2xl font-light shadow-2xl shadow-blue-500/40 transition-all hover:scale-110 active:scale-95"
       >
         +
       </button>
