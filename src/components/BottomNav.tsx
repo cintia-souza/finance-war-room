@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Bot, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Bot, User, LogOut, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
@@ -10,6 +10,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard/importar", label: "Importar", icon: Upload },
   { href: "/dashboard/consultor", label: "Consultor", icon: Bot },
   { href: "/dashboard/profile", label: "Perfil", icon: User },
 ];

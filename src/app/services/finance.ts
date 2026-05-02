@@ -63,4 +63,22 @@ export const financeService = {
     }
     return (data as Transaction[]) || [];
   },
+
+  async importTransactions(transactions: TransactionInsert[]): Promise<number> {
+    const batchSize = 50;
+    let imported = 0;
+
+    for (let i = 0; i < transactions.length; i += batchSize) {
+      const batch = transactions.slice(i, i + batchSize);
+      const { error } = await supabase.from("transactions").insert(batch);
+
+      if (error) {
+        console.error("Erro ao importar lote:", error.message);
+        throw error;
+      }
+      imported += batch.length;
+    }
+
+    return imported;
+  },
 };
