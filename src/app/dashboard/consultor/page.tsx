@@ -85,7 +85,7 @@ export default function ConsultorPage() {
         </div>
         <div>
           <h1 className="text-sm font-bold">Consultor Financeiro</h1>
-          <p className="text-[10px] text-slate-500">Powered by Gemini AI</p>
+          <p className="text-[10px] text-slate-500">Powered by Groq AI</p>
         </div>
       </div>
 
