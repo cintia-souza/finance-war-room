@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { chatMessageSchema } from "@/lib/validations";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY ?? "" });
 
@@ -35,18 +36,15 @@ function buildContext(transactions: TransactionData[]): string {
 
   const receitas = transactions
     .filter((t) => t.type === "receita")
-    .reduce((acc, t) => acc + t.amount, 0);
-
+    .reduce((a, t) => a + t.amount, 0);
   const despesas = transactions
     .filter((t) => t.type === "despesa")
-    .reduce((acc, t) => acc + t.amount, 0);
-
+    .reduce((a, t) => a + t.amount, 0);
   const pendentes = transactions
     .filter((t) => t.status === "pendente")
-    .reduce((acc, t) => acc + t.amount, 0);
-
+    .reduce((a, t) => a + t.amount, 0);
   const fixas = transactions.filter((t) => t.is_recurring);
-  const totalFixas = fixas.reduce((acc, t) => acc + t.amount, 0);
+  const totalFixas = fixas.reduce((a, t) => a + t.amount, 0);
 
   const porCategoria = transactions
     .filter((t) => t.type === "despesa")
@@ -71,29 +69,25 @@ function buildContext(transactions: TransactionData[]): string {
     )
     .join("\n");
 
-  return `RESUMO: Receitas R$ ${receitas.toFixed(2)} | Despesas R$ ${despesas.toFixed(2)} | Saldo R$ ${(receitas - despesas).toFixed(2)} | Pendente R$ ${pendentes.toFixed(2)} | Fixos R$ ${totalFixas.toFixed(2)}
-
-CATEGORIAS:\n${categoriaStr || "  Nenhuma"}
-
-LANÇAMENTOS:\n${detalhamento}`;
+  return `RESUMO: Receitas R$ ${receitas.toFixed(2)} | Despesas R$ ${despesas.toFixed(2)} | Saldo R$ ${(receitas - despesas).toFixed(2)} | Pendente R$ ${pendentes.toFixed(2)} | Fixos R$ ${totalFixas.toFixed(2)}\n\nCATEGORIAS:\n${categoriaStr || "  Nenhuma"}\n\nLANÇAMENTOS:\n${detalhamento}`;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, transactions } = await request.json();
+    const body = await request.json();
+    const parsed = chatMessageSchema.safeParse(body);
 
-    if (!message) {
-      return NextResponse.json({ error: "Mensagem é obrigatória" }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
     }
+
+    const { message, transactions } = parsed.data;
 
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { error: "GROQ_API_KEY não configurada no servidor." },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "GROQ_API_KEY não configurada." }, { status: 500 });
     }
 
-    const context = buildContext(transactions ?? []);
+    const context = buildContext((transactions as TransactionData[]) ?? []);
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -106,7 +100,6 @@ export async function POST(request: NextRequest) {
     });
 
     const text = completion.choices[0]?.message?.content ?? "Não consegui gerar uma resposta.";
-
     return NextResponse.json({ response: text });
   } catch (error: unknown) {
     const err = error as { message?: string };

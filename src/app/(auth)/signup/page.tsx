@@ -25,7 +25,13 @@ export default function SignUpPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
     setLoading(false);
     if (error) {
       setMessage(error.message);

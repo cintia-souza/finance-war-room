@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { Transaction, TransactionInsert, TransactionStatus } from "@/types/finance";
+import { transactionInsertSchema, transactionUpdateSchema } from "@/lib/validations";
 
 async function getUserId(): Promise<string> {
   const {
@@ -23,12 +24,14 @@ export const financeService = {
   },
 
   async toggleStatus(id: string, currentStatus: TransactionStatus): Promise<void> {
+    const userId = await getUserId();
     const newStatus: TransactionStatus = currentStatus === "pago" ? "pendente" : "pago";
 
     const { error } = await supabase
       .from("transactions")
       .update({ status: newStatus })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", userId); // Double-check ownership
 
     if (error) {
       console.error("Erro ao atualizar status:", error.message);
@@ -37,7 +40,17 @@ export const financeService = {
   },
 
   async updateTransaction(id: string, updates: Partial<TransactionInsert>): Promise<void> {
-    const { error } = await supabase.from("transactions").update(updates).eq("id", id);
+    const userId = await getUserId();
+
+    // Validate input
+    const parsed = transactionUpdateSchema.safeParse(updates);
+    if (!parsed.success) throw new Error("Dados inválidos");
+
+    const { error } = await supabase
+      .from("transactions")
+      .update(parsed.data)
+      .eq("id", id)
+      .eq("user_id", userId); // Double-check ownership
 
     if (error) {
       console.error("Erro ao editar transação:", error.message);
@@ -46,7 +59,13 @@ export const financeService = {
   },
 
   async deleteTransaction(id: string): Promise<void> {
-    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    const userId = await getUserId();
+
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId); // Double-check ownership
 
     if (error) {
       console.error("Erro ao excluir transação:", error.message);
@@ -55,7 +74,14 @@ export const financeService = {
   },
 
   async addTransaction(transaction: TransactionInsert): Promise<Transaction[]> {
-    const { data, error } = await supabase.from("transactions").insert([transaction]).select();
+    // Validate input
+    const parsed = transactionInsertSchema.safeParse(transaction);
+    if (!parsed.success) {
+      console.error("Validação falhou:", parsed.error.message);
+      throw new Error("Dados inválidos");
+    }
+
+    const { data, error } = await supabase.from("transactions").insert([parsed.data]).select();
 
     if (error) {
       console.error("Erro ao adicionar transação:", error.message, error.details, error.hint);
@@ -65,11 +91,19 @@ export const financeService = {
   },
 
   async importTransactions(transactions: TransactionInsert[]): Promise<number> {
+    const userId = await getUserId();
     const batchSize = 50;
     let imported = 0;
 
-    for (let i = 0; i < transactions.length; i += batchSize) {
-      const batch = transactions.slice(i, i + batchSize);
+    // Validate all and enforce user_id
+    const validated = transactions.map((t) => {
+      const parsed = transactionInsertSchema.safeParse({ ...t, user_id: userId });
+      if (!parsed.success) throw new Error(`Transação inválida: ${t.description}`);
+      return parsed.data;
+    });
+
+    for (let i = 0; i < validated.length; i += batchSize) {
+      const batch = validated.slice(i, i + batchSize);
       const { error } = await supabase.from("transactions").insert(batch);
 
       if (error) {
