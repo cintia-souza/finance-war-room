@@ -12,7 +12,7 @@ import {
 import { financeService } from "@/app/services/finance";
 
 interface AddTransactionFormProps {
-  onTransactionAdded: () => void;
+  onTransactionAdded: (date: string) => void;
 }
 
 export default function AddTransactionForm({ onTransactionAdded }: AddTransactionFormProps) {
@@ -100,7 +100,7 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
       setTotalInstallments("");
       setNotes("");
       setHasInstallments(false);
-      onTransactionAdded();
+      onTransactionAdded(dueDate);
     } catch (error) {
       console.error("Erro ao salvar:", error);
       alert("Falha ao salvar transação.");
@@ -202,9 +202,16 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
       </div>
 
       <div>
-        <label htmlFor="add-date" className="sr-only">
-          Data de vencimento
-        </label>
+        <div className="mb-1 flex items-center justify-between px-1">
+          <label htmlFor="add-date" className="text-t-muted text-xs font-bold">
+            {type === "receita" ? "Data de recebimento" : "Data de vencimento"}
+          </label>
+          {dueDate > new Date().toISOString().split("T")[0] && (
+            <span className="bg-t-accent/10 text-t-accent rounded-lg px-2 py-0.5 text-[10px] font-bold">
+              Agendado
+            </span>
+          )}
+        </div>
         <input
           id="add-date"
           type="date"

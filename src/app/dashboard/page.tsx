@@ -291,7 +291,12 @@ export default function Dashboard() {
                 </button>
               </div>
               <AddTransactionForm
-                onTransactionAdded={() => {
+                onTransactionAdded={(date) => {
+                  const month = date.slice(0, 7);
+                  if (month !== currentMonth) {
+                    setDirection(month > currentMonth ? 1 : -1);
+                    setCurrentMonth(month);
+                  }
                   reload();
                   setShowForm(false);
                 }}
