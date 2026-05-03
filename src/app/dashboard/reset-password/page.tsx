@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { PasswordInput } from "@/components/PasswordInput";
-import { ShieldCheck, Lock } from "lucide-react";
+import { ShieldCheck, Lock, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-type Step = "loading" | "form" | "success" | "error";
+type Step = "loading" | "form" | "success" | "expired";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -19,23 +19,33 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // O Supabase client processa automaticamente os tokens da URL (#access_token=...)
+    // e dispara o evento PASSWORD_RECOVERY
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setStep("form");
+      } else if (event === "SIGNED_IN") {
+        // Se veio SIGNED_IN sem PASSWORD_RECOVERY, pode ser que já processou
+        // Verifica se a URL tem tokens de recovery
+        if (window.location.hash.includes("type=recovery")) {
+          setStep("form");
+        }
       }
     });
 
-    // Fallback: se já tem sessão (veio do callback), mostra o form
+    // Também verifica se já tem sessão (caso o token já tenha sido processado)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setStep("form");
+      if (session && window.location.hash.includes("type=recovery")) {
+        setStep("form");
+      }
     });
 
-    // Timeout para não ficar loading infinito
+    // Timeout: se depois de 8s não detectou recovery, link expirado
     const timeout = setTimeout(() => {
-      setStep((prev) => (prev === "loading" ? "error" : prev));
-    }, 10000);
+      setStep((prev) => (prev === "loading" ? "expired" : prev));
+    }, 8000);
 
     return () => {
       subscription.unsubscribe();
@@ -68,7 +78,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="bg-t-bg text-t-text flex min-h-screen flex-col items-center justify-center p-6">
+    <main className="flex min-h-[calc(100vh-64px)] items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <AnimatePresence mode="wait">
           {/* LOADING */}
@@ -80,15 +90,15 @@ export default function ResetPasswordPage() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center gap-4 py-16"
             >
-              <div className="border-t-accent h-8 w-8 animate-spin rounded-full border-t-2" />
+              <Loader2 size={32} className="text-t-accent animate-spin" />
               <p className="text-t-muted text-sm">Verificando link de recuperação...</p>
             </motion.div>
           )}
 
-          {/* ERROR */}
-          {step === "error" && (
+          {/* EXPIRED */}
+          {step === "expired" && (
             <motion.div
-              key="error"
+              key="expired"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -108,12 +118,6 @@ export default function ResetPasswordPage() {
                 className="bg-t-accent hover:bg-t-accent-hover block w-full cursor-pointer rounded-2xl p-4 text-center font-bold text-white transition-colors"
               >
                 Solicitar novo link
-              </Link>
-              <Link
-                href="/login"
-                className="text-t-muted hover:text-t-text block text-center text-sm"
-              >
-                Voltar ao login
               </Link>
             </motion.div>
           )}
@@ -183,27 +187,22 @@ export default function ResetPasswordPage() {
                 transition={{ delay: 0.3 }}
               >
                 <h2 className="text-2xl font-bold">Senha Atualizada! ✅</h2>
-                <p className="text-t-muted mt-2 text-sm">
-                  Sua senha foi alterada com sucesso. Use a nova senha para entrar.
-                </p>
+                <p className="text-t-muted mt-2 text-sm">Sua senha foi alterada com sucesso.</p>
               </motion.div>
 
-              <motion.div
+              <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
+                onClick={() => router.push("/dashboard")}
+                className="bg-t-accent hover:bg-t-accent-hover w-full cursor-pointer rounded-2xl p-4 font-bold text-white transition-colors"
               >
-                <button
-                  onClick={() => router.push("/login")}
-                  className="bg-t-accent hover:bg-t-accent-hover w-full cursor-pointer rounded-2xl p-4 font-bold text-white transition-colors"
-                >
-                  Ir para o Login
-                </button>
-              </motion.div>
+                Ir para o Dashboard
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </main>
   );
 }

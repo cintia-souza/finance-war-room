@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export default function EmailConfirmadoPage() {
   return (
-    <div className="bg-t-bg text-t-text flex min-h-screen flex-col items-center justify-center p-6">
+    <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-8 text-center">
         <motion.div
           initial={{ scale: 0 }}
@@ -37,10 +37,10 @@ export default function EmailConfirmadoPage() {
           className="space-y-3"
         >
           <Link
-            href="/login"
+            href="/dashboard"
             className="bg-t-accent hover:bg-t-accent-hover flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl p-4 font-bold text-white transition-colors"
           >
-            Entrar na conta
+            Ir para o Dashboard
             <ArrowRight size={18} />
           </Link>
         </motion.div>

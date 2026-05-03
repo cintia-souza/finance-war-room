@@ -1,7 +1,8 @@
 "use client";
-import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { Session } from "@supabase/supabase-js";
 
 function LoadingScreen() {
   return (
@@ -12,25 +13,71 @@ function LoadingScreen() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
+  const [session, setSession] = useState<Session | null>(null);
+  const [checked, setChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !session) router.replace("/login");
-  }, [loading, session, router]);
+    // Escuta mudanças de auth (inclui processamento de tokens da URL)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setChecked(true);
+    });
 
-  if (loading || !session) return <LoadingScreen />;
+    // Verifica sessão existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setChecked(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Só redireciona depois de verificar E se não tem tokens na URL sendo processados
+    if (checked && !session) {
+      const hasTokenInUrl =
+        window.location.hash.includes("access_token") || window.location.search.includes("code=");
+
+      if (!hasTokenInUrl) {
+        router.replace("/login");
+      }
+    }
+  }, [checked, session, router]);
+
+  if (!checked || !session) return <LoadingScreen />;
   return <>{children}</>;
 }
 
 export function GuestGuard({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
+  const [session, setSession] = useState<Session | null>(null);
+  const [checked, setChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && session) router.replace("/dashboard");
-  }, [loading, session, router]);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setChecked(true);
+    });
 
-  if (loading || session) return <LoadingScreen />;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setChecked(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (checked && session) {
+      router.replace("/dashboard");
+    }
+  }, [checked, session, router]);
+
+  if (!checked || session) return <LoadingScreen />;
   return <>{children}</>;
 }
