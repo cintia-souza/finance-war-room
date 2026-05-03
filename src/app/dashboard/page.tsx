@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Transaction } from "@/types/finance";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, getMonthLabel } from "@/lib/utils";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { financeService } from "@/app/services/finance";
@@ -83,15 +83,11 @@ export default function Dashboard() {
     {} as Record<string, { total: number; pagas: number; totalDebt: number }>,
   );
 
-  const monthLabel = new Date(currentMonth + "-01").toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthLabel = getMonthLabel(currentMonth);
 
   return (
     <main className="p-4" role="main" aria-label="Dashboard financeiro">
       <DashboardHeader />
-
       <MonthSelector currentMonth={currentMonth} direction={direction} onNavigate={navigateMonth} />
 
       {loading && <DashboardSkeleton />}
@@ -139,7 +135,6 @@ export default function Dashboard() {
                   <p className={`font-mono text-sm font-bold ${color}`}>{formatBRL(value)}</p>
                 </motion.div>
               ))}
-
               <motion.div
                 className="border-t-border bg-t-surface rounded-2xl border p-3"
                 initial={{ opacity: 0, y: 10 }}
@@ -151,7 +146,7 @@ export default function Dashboard() {
                   key={saldo}
                   initial={{ opacity: 0, scale: 1.15 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  transition={{ duration: 0.5 }}
                   className={`font-mono text-sm font-bold ${saldo >= 0 ? "text-t-income" : "text-t-expense"}`}
                 >
                   {formatBRL(saldo)}
@@ -177,7 +172,6 @@ export default function Dashboard() {
                   aria-valuenow={progresso}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label="Progresso de pagamento"
                 >
                   <motion.div
                     className="bg-t-success h-full rounded-full"
@@ -189,7 +183,7 @@ export default function Dashboard() {
               </motion.div>
             )}
 
-            {/* Transações ou empty state */}
+            {/* Transações */}
             <section className="space-y-3" aria-label="Lançamentos do mês">
               <h2 className="text-t-muted px-1 text-xs font-black uppercase">Lançamentos do Mês</h2>
               {monthTransactions.length === 0 ? (
@@ -212,7 +206,7 @@ export default function Dashboard() {
         </AnimatePresence>
       )}
 
-      {/* Dívidas parceladas (global) */}
+      {/* Dívidas parceladas */}
       {!loading && Object.keys(dividasAgrupadas).length > 0 && (
         <section className="mt-8 space-y-3" aria-label="Progresso das dívidas">
           <h2 className="text-t-muted px-1 text-xs font-black uppercase">Progresso das Dívidas</h2>
@@ -237,7 +231,6 @@ export default function Dashboard() {
                   aria-valuenow={p}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label={`Progresso de ${name}`}
                 >
                   <motion.div
                     className="bg-t-accent h-full rounded-full"
@@ -255,6 +248,7 @@ export default function Dashboard() {
       {editingTransaction && (
         <EditTransactionModal
           transaction={editingTransaction}
+          allTransactions={transactions}
           onClose={() => setEditingTransaction(null)}
           onSaved={() => {
             setEditingTransaction(null);
@@ -272,7 +266,6 @@ export default function Dashboard() {
             className="fixed inset-0 z-50 flex items-end bg-black/80 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
-            aria-label="Novo lançamento"
           >
             <motion.div
               initial={{ y: "100%" }}

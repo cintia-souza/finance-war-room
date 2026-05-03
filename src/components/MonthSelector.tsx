@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
+import { getMonthLabel } from "@/lib/utils";
 
 interface MonthSelectorProps {
   currentMonth: string;
@@ -14,10 +15,7 @@ export function MonthSelector({ currentMonth, direction, onNavigate }: MonthSele
   const haptic = useHaptic();
   const constraintsRef = useRef(null);
 
-  const monthLabel = new Date(currentMonth + "-01").toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthLabel = getMonthLabel(currentMonth);
 
   const handleNav = (dir: number) => {
     haptic.navigate();

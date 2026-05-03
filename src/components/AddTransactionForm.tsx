@@ -20,7 +20,10 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<TransactionCategory>("moradia");
-  const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
+  const [dueDate, setDueDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
   const [isRecurring, setIsRecurring] = useState(false);
   const [hasInstallments, setHasInstallments] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState("");
@@ -56,9 +59,12 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
       if (hasInstallments && parsedInstallments && parsedInstallments > 1) {
         const installmentAmount = parsedDebt ? parsedDebt / parsedInstallments : parseFloat(amount);
 
+        // Extrair ano, mês, dia da string para evitar problemas de timezone
+        const [startYear, startMonth, startDay] = dueDate.split("-").map(Number);
+
         for (let i = 1; i <= parsedInstallments; i++) {
-          const installmentDate = new Date(dueDate);
-          installmentDate.setMonth(installmentDate.getMonth() + (i - 1));
+          const d = new Date(startYear, startMonth - 1 + (i - 1), startDay);
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
           const transaction: TransactionInsert = {
             description: `${description} (${i}/${parsedInstallments})`,
@@ -66,7 +72,7 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
             type,
             category,
             status: "pendente",
-            due_date: installmentDate.toISOString().split("T")[0],
+            due_date: dateStr,
             is_recurring: false,
             total_installments: parsedInstallments,
             current_installment: i,
@@ -94,13 +100,15 @@ export default function AddTransactionForm({ onTransactionAdded }: AddTransactio
         await financeService.addTransaction(transaction);
       }
 
+      const savedDate = dueDate;
+
       setDescription("");
       setAmount("");
       setTotalDebt("");
       setTotalInstallments("");
       setNotes("");
       setHasInstallments(false);
-      onTransactionAdded(dueDate);
+      onTransactionAdded(savedDate);
     } catch (error) {
       console.error("Erro ao salvar:", error);
       alert("Falha ao salvar transação.");

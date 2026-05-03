@@ -65,10 +65,25 @@ export const financeService = {
       .from("transactions")
       .delete()
       .eq("id", id)
-      .eq("user_id", userId); // Double-check ownership
+      .eq("user_id", userId);
 
     if (error) {
       console.error("Erro ao excluir transação:", error.message);
+      throw error;
+    }
+  },
+
+  async deleteMultiple(ids: string[]): Promise<void> {
+    const userId = await getUserId();
+
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .in("id", ids)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Erro ao excluir transações:", error.message);
       throw error;
     }
   },

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   Transaction,
   TransactionType,
@@ -11,14 +12,21 @@ import {
 import { financeService } from "@/app/services/finance";
 import { X } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 interface EditTransactionModalProps {
   transaction: Transaction;
+  allTransactions: Transaction[];
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function EditTransactionModal({ transaction, onClose, onSaved }: EditTransactionModalProps) {
+export function EditTransactionModal({
+  transaction,
+  allTransactions,
+  onClose,
+  onSaved,
+}: EditTransactionModalProps) {
   const [description, setDescription] = useState(transaction.description);
   const [amount, setAmount] = useState(String(transaction.amount));
   const [type, setType] = useState<TransactionType>(transaction.type);
@@ -26,8 +34,22 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
   const [dueDate, setDueDate] = useState(transaction.due_date);
   const [notes, setNotes] = useState(transaction.notes ?? "");
   const [loading, setLoading] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<"single" | "all" | null>(null);
 
   const categories = type === "receita" ? RECEITA_CATEGORIES : DESPESA_CATEGORIES;
+
+  // Encontrar parcelas irmãs (mesma descrição base)
+  const baseName = transaction.description.replace(/\s*\(\d+\/\d+\)$/, "");
+  const isInstallment = transaction.total_installments && transaction.total_installments > 1;
+  const siblingIds = isInstallment
+    ? allTransactions
+        .filter(
+          (t) =>
+            t.description.replace(/\s*\(\d+\/\d+\)$/, "") === baseName &&
+            t.total_installments === transaction.total_installments,
+        )
+        .map((t) => t.id)
+    : [];
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +71,27 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Tem certeza que deseja excluir este lançamento?")) return;
+  const handleDeleteSingle = async () => {
+    setDeleteMode(null);
     setLoading(true);
     try {
       await financeService.deleteTransaction(transaction.id);
       onSaved();
     } catch {
-      alert("Erro ao excluir lançamento.");
+      alert("Erro ao excluir.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleteMode(null);
+    setLoading(true);
+    try {
+      await financeService.deleteMultiple(siblingIds);
+      onSaved();
+    } catch {
+      alert("Erro ao excluir parcelas.");
     } finally {
       setLoading(false);
     }
@@ -94,9 +129,7 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
                 setType("despesa");
                 setCategory("moradia");
               }}
-              className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
-                type === "despesa" ? "bg-t-expense text-white" : "text-t-muted"
-              }`}
+              className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${type === "despesa" ? "bg-t-expense text-white" : "text-t-muted"}`}
             >
               Despesa
             </button>
@@ -108,9 +141,7 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
                 setType("receita");
                 setCategory("salario");
               }}
-              className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${
-                type === "receita" ? "bg-t-income text-white" : "text-t-muted"
-              }`}
+              className={`flex-1 rounded-xl py-2 text-sm font-bold transition-colors ${type === "receita" ? "bg-t-income text-white" : "text-t-muted"}`}
             >
               Receita
             </button>
@@ -179,11 +210,17 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
             />
           </div>
 
-          {transaction.total_installments && (
-            <p className="text-t-muted text-xs">
-              Parcela {transaction.current_installment}/{transaction.total_installments}
-              {transaction.total_debt && ` • Dívida total: ${formatBRL(transaction.total_debt)}`}
-            </p>
+          {isInstallment && (
+            <div className="border-t-border bg-t-bg rounded-xl border p-3">
+              <p className="text-t-muted text-xs font-bold">
+                Parcela {transaction.current_installment}/{transaction.total_installments}
+              </p>
+              {transaction.total_debt && (
+                <p className="text-t-muted text-[10px]">
+                  Dívida total: {formatBRL(transaction.total_debt)}
+                </p>
+              )}
+            </div>
           )}
 
           <div>
@@ -203,21 +240,61 @@ export function EditTransactionModal({ transaction, onClose, onSaved }: EditTran
           <button
             type="submit"
             disabled={loading}
-            className="bg-t-accent w-full rounded-2xl p-4 font-bold text-white disabled:opacity-50"
+            className="bg-t-accent hover:bg-t-accent-hover w-full cursor-pointer rounded-2xl p-4 font-bold text-white transition-colors disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Salvar Alterações"}
           </button>
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={loading}
-            className="border-t-danger/30 bg-t-danger/10 text-t-danger w-full rounded-2xl border p-4 font-bold disabled:opacity-50"
-          >
-            Excluir Lançamento
-          </button>
+          {/* Botões de exclusão */}
+          <div className={`space-y-2 ${isInstallment ? "" : ""}`}>
+            <button
+              type="button"
+              onClick={() => setDeleteMode("single")}
+              disabled={loading}
+              className="border-t-danger/30 bg-t-danger/10 text-t-danger hover:bg-t-danger/20 w-full cursor-pointer rounded-2xl border p-4 font-bold transition-colors disabled:opacity-50"
+            >
+              Excluir este lançamento
+            </button>
+
+            {isInstallment && siblingIds.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setDeleteMode("all")}
+                disabled={loading}
+                className="border-t-danger/50 bg-t-danger/20 text-t-danger hover:bg-t-danger/30 w-full cursor-pointer rounded-2xl border p-4 font-bold transition-colors disabled:opacity-50"
+              >
+                Excluir todas as {siblingIds.length} parcelas
+              </button>
+            )}
+          </div>
         </form>
       </div>
+
+      {/* Modais de confirmação */}
+      <AnimatePresence>
+        {deleteMode === "single" && (
+          <ConfirmModal
+            title="Excluir lançamento"
+            message={`Excluir "${transaction.description}"?`}
+            confirmLabel="Excluir"
+            cancelLabel="Cancelar"
+            danger
+            onConfirm={handleDeleteSingle}
+            onCancel={() => setDeleteMode(null)}
+          />
+        )}
+        {deleteMode === "all" && (
+          <ConfirmModal
+            title="Excluir todas as parcelas"
+            message={`Excluir todas as ${siblingIds.length} parcelas de "${baseName}"? Essa ação não pode ser desfeita.`}
+            confirmLabel={`Excluir ${siblingIds.length} parcelas`}
+            cancelLabel="Cancelar"
+            danger
+            onConfirm={handleDeleteAll}
+            onCancel={() => setDeleteMode(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
